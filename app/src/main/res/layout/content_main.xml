@@ -20,28 +20,25 @@
         android:id="@+id/webView"
         android:layout_alignParentBottom="true" />
 
-    <TextView
-        android:text="TextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginLeft="65dp"
-        android:layout_marginStart="65dp"
-        android:layout_marginTop="31dp"
-        android:id="@+id/DisplayText" />
-
     <Button
         android:text="Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_alignLeft="@+id/DataField"
-        android:layout_alignStart="@+id/DataField"
-        android:layout_marginLeft="22dp"
-        android:layout_marginStart="22dp"
-        android:id="@+id/RequestButton" />
+        android:id="@+id/RequestButton"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <TextView
+        android:text="TextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/DisplayText"
+        android:layout_alignParentTop="true"
+        android:layout_alignRight="@+id/DataField"
+        android:layout_alignEnd="@+id/DataField"
+        android:layout_marginRight="20dp"
+        android:layout_marginEnd="20dp" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -49,8 +46,41 @@
         android:inputType="textPersonName"
         android:text="Name"
         android:ems="10"
-        android:layout_above="@+id/RequestButton"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="21dp"
-        android:id="@+id/DataField" />
+        android:id="@+id/DataField"
+        android:layout_below="@+id/RequestButton"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="text"
+        android:ems="10"
+        android:layout_below="@+id/DataField"
+        android:layout_toLeftOf="@+id/RequestButton"
+        android:layout_toStartOf="@+id/RequestButton"
+        android:layout_marginTop="151dp"
+        android:id="@+id/showRssi" />
+
+    <TextView
+        android:text="TextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/webView"
+        android:layout_alignRight="@+id/ActivateRssi"
+        android:layout_alignEnd="@+id/ActivateRssi"
+        android:layout_marginBottom="61dp"
+        android:id="@+id/serviceStatus" />
+
+    <Button
+        android:id="@+id/ActivateRssi"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="onClick"
+        android:text="Activate Bluetooth"
+        android:layout_above="@+id/serviceStatus"
+        android:layout_toLeftOf="@+id/RequestButton"
+        android:layout_toStartOf="@+id/RequestButton"
+        android:layout_marginBottom="26dp" />
+
 </RelativeLayout>
