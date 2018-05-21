@@ -24,7 +24,9 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -37,30 +39,87 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+    final String urlPlus1 = "http://192.168.1.94/api/v1/commands/?cmd=volume&volume=plus";
+    final String urlMinus1 = "http://192.168.1.94/api/v1/commands/?cmd=volume&volume=minus";
+    final String urlPlus2 = "http://192.168.1.96/api/v1/commands/?cmd=volume&volume=plus";
+    final String urlMinus2 = "http://192.168.1.96/api/v1/commands/?cmd=volume&volume=minus";
+    final String urlPlay = "http://192.168.1.94/api/v1/commands/?cmd=play";
+    final String urlPause = "http://192.168.1.94/api/v1/commands/?cmd=pause";
+    String url = "";
     private WebView myWebView;
-    Button RequestButton; // button which on clicking, sends the request
-    TextView DisplayText; // a text field to display the request response
-    TextView DataField;
 
-    TextView serviceStatus;
+    String getResponse = "";
+    String status = "";
+
+
     Button ActivateRssi;
-    EditText showRssi;
+    TextView showRssi;
+    TextView showRssi2;
+    Switch algo1;
+    Switch algo2;
+    Button play;
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
     private static final String TAG = "MainActivity";
+    double resultCode=0;
+    double resultCode2=0;
+    double totalDist=0;
+    double playDist=0;
+    double rangePercentile = 0.20;
+    double middleDist=0;
+    double middleDistLow=0;
+    double middleDistHigh=0;
+    double middlePercintile = 0.10;
+     RequestQueue queue;
+
+   //private ObservableInteger obsInt = new ObservableInteger();
+
+
+    // your URL
+
+
+
+
+
 
     private BroadcastReceiver receiver = new BroadcastReceiver() {
-
         @Override
         public void onReceive(Context context, Intent intent) {
             Bundle bundle = intent.getExtras();
-            Log.d(TAG, "onReceive: hejeheje");
             if (bundle != null) {
-                double resultCode = bundle.getDouble("rssiValue");
-                showRssi.setText("RSSI value is:    " + resultCode);
+                resultCode = bundle.getDouble("rssiValue");
+                resultCode2 = bundle.getDouble("rssiValue2");
+                showRssi.setText("Distance to speaker 1: " + resultCode);
+                showRssi2.setText("Distance to speaker 2: " + resultCode2);
+               // obsInt.set(resultCode);
+                totalDist = resultCode + resultCode2;
+                playDist = totalDist*rangePercentile;
+                middleDist=totalDist/bundle.size();
+                middleDistLow=middleDist+(middleDist*middlePercintile);
+                middleDistHigh=middleDist-(middleDist*middlePercintile);
+                Log.d(TAG, "diffDistance : " + (resultCode - resultCode2));
+                if(algo1.isChecked()){
+                    if (playDist > resultCode ){
+                        sendRequest(urlPlus2);
+                        sendRequest(urlMinus1);
+
+                    }
+                   else if(playDist > resultCode2) {
+                        sendRequest(urlMinus2);
+                        sendRequest(urlPlus1);
+                    }
+                }
+
+                   else if(resultCode - resultCode2 < 1 && resultCode - resultCode2 > -1){
+                        sendRequest(urlPlus1);
+                        sendRequest(urlPlus2);
+                        Log.d(TAG, "onReceive: " + (resultCode - resultCode2));
+
+                }
 
             }
         }
@@ -71,20 +130,27 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = new Intent(this, RssiService.class);
         // add infos for the service which file to download and where to store
-
-
         startService(intent);
-        serviceStatus.setText("Service startedede");
     }
 
+
+
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        algo1 = (Switch) findViewById(R.id.algoritm1);
+        algo2 = (Switch) findViewById(R.id.algoritm2);
         ActivateRssi = (Button) findViewById(R.id.ActivateRssi);
-        serviceStatus = (TextView) findViewById(R.id.serviceStatus);
-        showRssi = (EditText) findViewById(R.id.showRssi);
+        showRssi = (TextView) findViewById(R.id.showRssi);
+        showRssi2 = (TextView) findViewById(R.id.showRssi2);
+        play = (Button) findViewById(R.id.play);
+        queue = Volley.newRequestQueue(this);
+        queue.start();
+
+        mediaClick(play, "");
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // Android M Permission check 
             if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -101,52 +167,48 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        registerReceiver(receiver, new IntentFilter(
-                RssiService.NOTIFICATION));
 
-        RequestButton = (Button) findViewById(R.id.RequestButton);
-        DataField = (TextView) findViewById(R.id.DataField);
-        DisplayText = (TextView) findViewById(R.id.DisplayText);
-        final RequestQueue queue = Volley.newRequestQueue(this);
-        final String url = "http://192.168.1.35/api/v1/commands/?cmd=play"; // your URL
 
-        queue.start();
-        RequestButton.setOnClickListener(new View.OnClickListener() {
+
+
+       /* obsInt.SetOnIntegerChangeListener(new OnIntegerChangeListener()
+        {
             @Override
-            public void onClick(View v) {
-                JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
-                        new Response.Listener<JSONObject>() {
-                            @Override
-                            public void onResponse(JSONObject response) {
-                                // display response
-                                Log.d("Response", response.toString());
-                            }
-                        },
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
+            public void onIntegerChanged(float newValue)
+            {
 
-                            }
-                        }
-                );
+                //Log.d(TAG, "onIntegerChanged: " + newValue + resultCode2);
+                if (newValue < resultCode2 ){
+                    sendRequest(urlPlus2);
+                    sendRequest(urlMinus1);
+                }
+                else{
+                    sendRequest(urlMinus2);
+                    sendRequest(urlPlus1);
+                }
 
-// add it to the RequestQueue
-                queue.add(getRequest);
             }
         });
-
-
+        */
 
         myWebView = (WebView) findViewById(R.id.webView);
         WebSettings webSettings = myWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
-        myWebView.loadUrl("http://192.168.1.35/playback");
+        myWebView.loadUrl("http://192.168.1.96/playback");
         myWebView.setWebViewClient(new WebViewClient());
 
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(receiver, new IntentFilter(
+                RssiService.NOTIFICATION));
+    }
+
+    @Override
     public void onDestroy() {
+        super.onDestroy();
         unregisterReceiver(receiver);
     }
 
@@ -181,6 +243,54 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+    private String mediaClick(Button button, final String url){
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (status.length() == 0 ||  status.indexOf("pause") != -1){
+                    status = sendRequest(urlPlay);
+                    Log.d(TAG, "onClick: " + status);
+                }
+                else {
+                    status = sendRequest(urlPause);
+                    Log.d(TAG, "onClick: lol  " + status);
+                }
+
+            }
+        });
+        return status;
+    }
+
+    public String sendRequest(String url){
+
+        final JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // display response
+                        Log.d("Response", response.toString());
+                        try {
+                            getResponse = response.getString("response");
+                            Log.d(TAG, "onResponse: " + getResponse);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        error.printStackTrace();
+                    }
+                }
+
+        );
+
+// add it to the RequestQueue
+        queue.add(getRequest);
+        return getResponse;
     }
 
     @Override
